@@ -9,6 +9,10 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include Middlewares/Third_Party/FatFs/src/option/subdir.mk
+-include Middlewares/Third_Party/FatFs/src/subdir.mk
+-include FATFS/Target/subdir.mk
+-include FATFS/App/subdir.mk
 -include Drivers/STM32F4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
@@ -60,8 +64,8 @@ all: main-build
 main-build: ITAB-stm-software.elf secondary-outputs
 
 # Tool invocations
-ITAB-stm-software.elf ITAB-stm-software.map: $(OBJS) $(USER_OBJS) /Users/timlundstedt/Thesis/ITAB-stm-software/STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "ITAB-stm-software.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/timlundstedt/Thesis/ITAB-stm-software/STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ITAB-stm-software.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ITAB-stm-software.elf ITAB-stm-software.map: $(OBJS) $(USER_OBJS) C:\Projects\ITAB-stm-software\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "ITAB-stm-software.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Projects\ITAB-stm-software\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ITAB-stm-software.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
