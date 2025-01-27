@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include "create_wave_data.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,7 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SOUND_BUFFER_SIZE 1024
+#define ADC_BUFFER_SIZE 1024
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -92,7 +93,7 @@ void myprintf(const char *fmt, ...){
 	int len = strlen(buffer);
 	HAL_UART_Transmit(&huart2, (uint8_t*)buffer, len, -1);
 }
-uint16_t adc_buffer[SOUND_BUFFER_SIZE];
+uint16_t adc_buffer[ADC_BUFFER_SIZE];
 /* USER CODE END 0 */
 
 /**
@@ -131,7 +132,7 @@ int main(void)
   MX_FATFS_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  /*
+
   myprintf("\r\n~ SD card demo by kiwih ~\r\n\r\n");
 
   HAL_Delay(1000); //a short delay is important to let the SD card settle
@@ -189,7 +190,7 @@ int main(void)
   f_close(&fil);
 
   //Now let's try and write a file "write.txt"
-  fres = f_open(&fil, "write.txt", FA_WRITE | FA_OPEN_ALWAYS | FA_CREATE_ALWAYS);
+  fres = f_open(&fil, "write.txt", FA_WRITE | FA_OPEN_ALWAYS);
   if(fres == FR_OK) {
 	myprintf("I was able to open 'write.txt' for writing\r\n");
   } else {
@@ -199,6 +200,12 @@ int main(void)
   //Copy in a string
   strncpy((char*)readBuf, "a new file is made!", 19);
   UINT bytesWrote;
+  fres = f_lseek(&fil, 6);
+  if(fres == FR_OK) {
+	myprintf("Moved cursor 6 bytes to the right\r\n");
+  } else {
+	myprintf("f_write error (%i)\r\n", fres);
+  }
   fres = f_write(&fil, readBuf, 19, &bytesWrote);
   if(fres == FR_OK) {
 	myprintf("Wrote %i bytes to 'write.txt'!\r\n", bytesWrote);
@@ -211,8 +218,11 @@ int main(void)
 
   //We're done, so de-mount the drive
   f_mount(NULL, "", 0);
-*/
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buffer, SOUND_BUFFER_SIZE);
+
+
+
+
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buffer, ADC_BUFFER_SIZE);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   /* USER CODE END 2 */
 
