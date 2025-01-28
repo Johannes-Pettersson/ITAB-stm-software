@@ -57,8 +57,8 @@ int create_wave_file(const char* name, FIL* fil)
 	wavh.num_chans = 1;
 	wavh.srate = 48000;
 	wavh.bits_per_samp = 16;
-	wavh.bytes_per_sec = wavh.srate * wavh.bits_per_samp / 8 * wavh.num_chans;
-	wavh.bytes_per_samp = wavh.bits_per_samp / 8 * wavh.num_chans;
+	wavh.bytes_per_sec = (wavh.srate * wavh.bits_per_samp * wavh.num_chans) / 8;
+	wavh.bytes_per_samp = (wavh.bits_per_samp * wavh.num_chans) / 8;
 
 
 	unsigned int res;
