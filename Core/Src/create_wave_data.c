@@ -1,14 +1,30 @@
-// main.c
-// https://www.youtube.com/watch?v=8nOi-0kBv2Y
-// gcc create_wave_file.c -o create_wave_file -lm
-// or clang create_wave_file.c -lm
+
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include "fatfs.h"
 
-int create_wave_data(uint8_t* data)
+
+
+int mount_sd_card(FATFS* FatFs){
+	//Open the file system
+	if (f_mount(FatFs, "", 1) != FR_OK) { //1=mount now
+		return 0;
+	}
+	return 1;
+}
+
+int create_wave_file(const char* name, FIL* fil)
 {
+	FRESULT fres;
+
+	fres = f_open(fil, name, FA_WRITE | FA_CREATE_NEW);
+	if (fres != FR_OK) {
+		return 0;
+	}
+
+
 	struct wav_header
 	{
 	  char riff[4];           /* "RIFF"                                  */
@@ -29,15 +45,6 @@ int create_wave_data(uint8_t* data)
 
 	struct wav_header wavh;
 
-
-	const float MIDDLE_C = 256.00;
-
-	const int sample_rate = 8000;
-	const int duration_seconds = 5;
-	//const int buffer_size = sample_rate * duration_seconds;
-	#define BUFFER_SIZE (8000 * 5)  // sample_rate * duration_seconds
-	uint16_t buffer[BUFFER_SIZE] = {};
-
 	const int header_length = sizeof(struct wav_header);
 
 	strncpy(wavh.riff, "RIFF", 4);
@@ -48,21 +55,42 @@ int create_wave_data(uint8_t* data)
 	wavh.chunk_size = 16;
 	wavh.format_tag = 1;
 	wavh.num_chans = 1;
-	wavh.srate = sample_rate;
+	wavh.srate = 48000;
 	wavh.bits_per_samp = 16;
 	wavh.bytes_per_sec = wavh.srate * wavh.bits_per_samp / 8 * wavh.num_chans;
 	wavh.bytes_per_samp = wavh.bits_per_samp / 8 * wavh.num_chans;
 
-	// Playing a C Note
-	for (int i = 0; i < BUFFER_SIZE; i++) {
-		buffer[i] = (short int)((cos((2 * M_PI * MIDDLE_C * i) / sample_rate) * 1000));
-	}
 
-	wavh.dlength = BUFFER_SIZE * wavh.bytes_per_samp;
-	wavh.flength = wavh.dlength + header_length;
-
-    memcpy(data, &wavh, header_length);
-    memcpy(data + header_length, buffer, BUFFER_SIZE * sizeof(uint16_t));
+	unsigned int res;
+    f_write(fil, &wavh, header_length, &res);
 
 	return 1;
 }
+
+int close_wave_file(FIL* fil, unsigned int* number_of_data_bytes_written){
+	//Insert data into header of file
+	f_lseek(fil, 4);
+
+	unsigned int res;
+
+	unsigned int file_length = (*number_of_data_bytes_written) + 44;
+	f_write(fil, &file_length, 4, &res);
+
+	f_lseek(fil, 40);
+
+	f_write(fil, number_of_data_bytes_written, 4, &res);
+
+	//Close file
+	if(f_close(fil) != FR_OK){
+		return 0;
+	}
+	return 1;
+}
+
+
+void demount_sd_card() {
+	f_mount(NULL, "", 0);
+}
+
+
+
