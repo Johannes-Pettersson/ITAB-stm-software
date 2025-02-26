@@ -35,7 +35,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ADC_BUFFER_SIZE 1024
+#define ADC_BUFFER_SIZE 16384
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -55,7 +55,8 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
-int16_t adc_buffer[ADC_BUFFER_SIZE];
+uint16_t adc_buffer[ADC_BUFFER_SIZE];
+int16_t adc_buffer_to_file[ADC_BUFFER_SIZE/2];
 FIL fil; 		//Currently open file handle
 unsigned int bytes_written;
 unsigned int total_bytes_written = 0;
@@ -113,24 +114,37 @@ void adjust_to_offset(int16_t* buffer, uint32_t length){
 
 
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc){
-	adjust_to_offset(adc_buffer, ADC_BUFFER_SIZE/2);
-	if(f_write(&fil, adc_buffer, ADC_BUFFER_SIZE/2, &bytes_written) == FR_OK){
-		total_bytes_written += bytes_written;
-	}else{
-		myprintf("Error while writing to file (first half of buffer)\r\n");
-	}
+
+    for(uint16_t i = 0; i < ADC_BUFFER_SIZE/2; i++){
+        adc_buffer_to_file[i] = (int16_t)(adc_buffer[i] & 0xFFFF);
+    }
+    adjust_to_offset(adc_buffer_to_file, ADC_BUFFER_SIZE/2);
+
+    if(f_write(&fil, adc_buffer_to_file, ADC_BUFFER_SIZE/2 * sizeof(int16_t), &bytes_written) == FR_OK){
+        total_bytes_written += bytes_written;
+        bytes_written = 0;
+    }else{
+        myprintf("Error while writing to file (first half of buffer)\r\n");
+        stop_recording();
+    }
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-	adjust_to_offset(adc_buffer+(ADC_BUFFER_SIZE/2), ADC_BUFFER_SIZE/2);
 
-	if(f_write(&fil, adc_buffer+(ADC_BUFFER_SIZE/2), ADC_BUFFER_SIZE/2, &bytes_written) == FR_OK){
-		total_bytes_written += bytes_written;
-	}else{
-		myprintf("Error while writing to file (first half of buffer)\r\n");
-		stop_recording();
-	}
+
+    for(uint16_t i = 0; i < ADC_BUFFER_SIZE/2; i++){
+        adc_buffer_to_file[i] = (int16_t)(adc_buffer[i + (ADC_BUFFER_SIZE/2)] & 0xFFFF);
+    }
+    adjust_to_offset(adc_buffer_to_file, ADC_BUFFER_SIZE/2);
+
+    if(f_write(&fil, adc_buffer_to_file, ADC_BUFFER_SIZE/2 * sizeof(int16_t), &bytes_written) == FR_OK){
+        total_bytes_written += bytes_written;
+        bytes_written = 0;
+    }else{
+        myprintf("Error while writing to file (second half of buffer)\r\n");
+        stop_recording();
+    }
 }
 /* USER CODE END 0 */
 
@@ -180,7 +194,6 @@ int main(void)
 	  myprintf("f_mount error\r\n");
 	  while(1);
   }
-
 
   if(!create_wave_file("test.wav", &fil)){
 	  myprintf("Unable to create Wav header\r\n");
@@ -302,7 +315,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_144CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -373,7 +386,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 1041;
+  htim2.Init.Period = 2082;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
