@@ -56,7 +56,6 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 
 uint16_t adc_buffer[ADC_BUFFER_SIZE];
-int16_t adc_buffer_to_file[ADC_BUFFER_SIZE/2];
 FIL fil; 		//Currently open file handle
 unsigned int bytes_written;
 unsigned int total_bytes_written = 0;
@@ -105,7 +104,7 @@ void stop_recording(){
 
 }
 
-void adjust_to_offset(int16_t* buffer, uint32_t length){
+void adjust_to_offset(uint16_t* buffer, uint32_t length){
 	int16_t offset = 24824;
 	for(int i = 0; i < length; i++){
 		buffer[i] = buffer[i]-offset;
@@ -115,12 +114,9 @@ void adjust_to_offset(int16_t* buffer, uint32_t length){
 
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc){
 
-    for(uint16_t i = 0; i < ADC_BUFFER_SIZE/2; i++){
-        adc_buffer_to_file[i] = (int16_t)(adc_buffer[i] & 0xFFFF);
-    }
-    adjust_to_offset(adc_buffer_to_file, ADC_BUFFER_SIZE/2);
+    adjust_to_offset(adc_buffer, ADC_BUFFER_SIZE/2);
 
-    if(f_write(&fil, adc_buffer_to_file, ADC_BUFFER_SIZE/2 * sizeof(int16_t), &bytes_written) == FR_OK){
+    if(f_write(&fil, adc_buffer, ADC_BUFFER_SIZE/2 * sizeof(uint16_t), &bytes_written) == FR_OK){
         total_bytes_written += bytes_written;
         bytes_written = 0;
     }else{
@@ -132,13 +128,9 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc){
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
 
+    adjust_to_offset(adc_buffer+ADC_BUFFER_SIZE/2, ADC_BUFFER_SIZE/2);
 
-    for(uint16_t i = 0; i < ADC_BUFFER_SIZE/2; i++){
-        adc_buffer_to_file[i] = (int16_t)(adc_buffer[i + (ADC_BUFFER_SIZE/2)] & 0xFFFF);
-    }
-    adjust_to_offset(adc_buffer_to_file, ADC_BUFFER_SIZE/2);
-
-    if(f_write(&fil, adc_buffer_to_file, ADC_BUFFER_SIZE/2 * sizeof(int16_t), &bytes_written) == FR_OK){
+    if(f_write(&fil, adc_buffer+(ADC_BUFFER_SIZE/2), ADC_BUFFER_SIZE/2 * sizeof(uint16_t), &bytes_written) == FR_OK){
         total_bytes_written += bytes_written;
         bytes_written = 0;
     }else{
