@@ -188,25 +188,7 @@ int main(void)
 	  while(1);
   }
 
-  if(!create_wave_file("test.wav", &fil)){
-	  myprintf("Unable to create Wav header\r\n");
-	  while(1);
-  }
-
-  start_recording();
-  while(total_bytes_written < 960000){}
-  stop_recording();
-
-  if(!close_wave_file(&fil, &total_bytes_written)){
-	  myprintf("Unable to close file\r\n");
-  }
-  myprintf("File closed\r\n");
-
-
-  demount_sd_card();
-
-
-
+  uint8_t uart_buffer[1];
 
   /* USER CODE END 2 */
 
@@ -214,10 +196,62 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+	  //TODO:
+	  //Lägg till så att pytonscriptet ska skicka när inspelningarna är klara
+	  //Skicka en bra respons till scripetet vid lyckad inspelning
+	  //Lägg till allt för bad gate också
+
+	  if(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY) == HAL_OK){
+		  if(uart_buffer[0] & 0b1000000){
+			  //Good gate
+
+			  char file_name[20];
+			  sprintf(file_name, "Good_gate_%d.wav", uart_buffer[0] & 0b01111111);
+
+			  if(!create_wave_file(file_name, &fil)){
+				  //Send error...
+				  uart_buffer[0] = 0;
+				  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+				  break;
+			  }
+
+			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+			  start_recording();
+			  while(total_bytes_written < 960000){}
+			  stop_recording();
+			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+
+			  if(!close_wave_file(&fil, &total_bytes_written)){
+				  //Send error...
+				  uart_buffer[0] = 0;
+				  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+				  break;
+			  }
+
+		  }else{
+			  //Bad gate
+		  }
+	  }
+
+	  /*
+	  if(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY)== HAL_OK){
+		  if(uart_buffer[0] == 0x31){
+			  HAL_UART_Transmit(&huart2, (uint8_t *)"Good", 4, 1000);
+		  }else if(uart_buffer[0] == 0x32){
+			  HAL_UART_Transmit(&huart2, (uint8_t *)"Bad", 3, 1000);
+		  }
+	  }
+	  */
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   }
+
+  demount_sd_card();
+
   /* USER CODE END 3 */
 }
 
@@ -482,6 +516,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : B1_Pin */
@@ -489,6 +526,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : LD2_Pin */
+  GPIO_InitStruct.Pin = LD2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SD_CS_Pin */
   GPIO_InitStruct.Pin = SD_CS_Pin;
