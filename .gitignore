@@ -54,8 +54,6 @@ dkms.conf
 
 # Project specific
 Debug/
-
 .DS_Store
 .settings/
 *.launch
-.cproject
