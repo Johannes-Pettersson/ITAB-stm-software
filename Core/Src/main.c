@@ -92,6 +92,7 @@ void myprintf(const char *fmt, ...){
 
 void start_recording(){
 	myprintf("Starting to record\r\n");
+	total_bytes_written = 0;
 	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buffer, ADC_BUFFER_SIZE);
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 }
