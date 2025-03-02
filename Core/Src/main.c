@@ -36,6 +36,9 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define ADC_BUFFER_SIZE 16384
+#define RECORDING_TIME_MS 10000
+
+#define RECORDING_TIME_SAMPLES RECORDING_TIME_MS*96
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -180,15 +183,25 @@ int main(void)
 
   HAL_Delay(1000); //a short delay is important to let the SD card settle
 
+  uint8_t uart_buffer[1];
+
   //some variables for FatFs
   FATFS FatFs; 	//Fatfs handle
 
-  if(!mount_sd_card(&FatFs)){
-	  myprintf("f_mount error\r\n");
-	  while(1);
+  //Wait for mount command
+  while(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY) != HAL_OK){
+	  if(uart_buffer[0] == 0xFF){
+		  if(!mount_sd_card(&FatFs)){
+			  uart_buffer[0] = 0x00;
+			  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+			  while(1){}
+		  }
+		  break;
+	  }else{
+		  uart_buffer[0] = 0x03;
+		  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+	  }
   }
-
-  uint8_t uart_buffer[1];
 
   /* USER CODE END 2 */
 
@@ -197,53 +210,72 @@ int main(void)
   while (1)
   {
 
-	  //TODO:
-	  //Lägg till så att pytonscriptet ska skicka när inspelningarna är klara
-	  //Skicka en bra respons till scripetet vid lyckad inspelning
-	  //Lägg till allt för bad gate också
-
 	  if(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY) == HAL_OK){
+
+		  if(uart_buffer[0] == 0x7F)
+			  break;
+
 		  if(uart_buffer[0] & 0b1000000){
 			  //Good gate
-
 			  char file_name[20];
-			  sprintf(file_name, "Good_gate_%d.wav", uart_buffer[0] & 0b01111111);
+			  sprintf(file_name, "Good_gate_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
 
 			  if(!create_wave_file(file_name, &fil)){
 				  //Send error...
-				  uart_buffer[0] = 0;
+				  uart_buffer[0] = 0x01;
 				  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
 				  break;
 			  }
 
 			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 			  start_recording();
-			  while(total_bytes_written < 960000){}
+			  while(total_bytes_written < RECORDING_TIME_SAMPLES){}
 			  stop_recording();
 			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
 
 			  if(!close_wave_file(&fil, &total_bytes_written)){
 				  //Send error...
-				  uart_buffer[0] = 0;
+				  uart_buffer[0] = 0x02;
 				  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
 				  break;
 			  }
 
+			  //Successful recording
+			  uart_buffer[0] = 0xF0;
+			  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+
 		  }else{
 			  //Bad gate
-		  }
-	  }
+			  char file_name[20];
+			  sprintf(file_name, "Bad_gate_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
 
-	  /*
-	  if(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY)== HAL_OK){
-		  if(uart_buffer[0] == 0x31){
-			  HAL_UART_Transmit(&huart2, (uint8_t *)"Good", 4, 1000);
-		  }else if(uart_buffer[0] == 0x32){
-			  HAL_UART_Transmit(&huart2, (uint8_t *)"Bad", 3, 1000);
+			  if(!create_wave_file(file_name, &fil)){
+				  //Send error...
+				  uart_buffer[0] = 0x01;
+				  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+				  break;
+			  }
+
+			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+			  start_recording();
+			  while(total_bytes_written < RECORDING_TIME_SAMPLES){}
+			  stop_recording();
+			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+
+			  if(!close_wave_file(&fil, &total_bytes_written)){
+				  //Send error...
+				  uart_buffer[0] = 0x02;
+				  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+				  break;
+			  }
+
+			  //Successful recording
+			  uart_buffer[0] = 0xF0;
+			  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
 		  }
 	  }
-	  */
 
     /* USER CODE END WHILE */
 
