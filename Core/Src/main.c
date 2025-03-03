@@ -203,6 +203,9 @@ int main(void)
 	  }
   }
 
+  uart_buffer[0] = 0xF1;
+  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -283,6 +286,8 @@ int main(void)
   }
 
   demount_sd_card();
+  uart_buffer[0] = 0xF2;
+  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
 
   /* USER CODE END 3 */
 }
