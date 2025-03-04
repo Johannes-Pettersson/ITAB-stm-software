@@ -171,117 +171,117 @@ int main(void)
 	//some variables for FatFs
 	FATFS FatFs; 	//Fatfs handle
 
+
+	//Wait for mount command
 	while(1){
-
-		//Wait for mount command
-		while(1){
-			if(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY) == HAL_OK){
-				if(uart_buffer[0] == 0xFF){
-					if(!mount_sd_card(&FatFs)){
-						uart_buffer[0] = 0x00;
-						HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-						NVIC_SystemReset();
-					}
-					break;
-				}else{
-					uart_buffer[0] = 0x03;
+		if(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY) == HAL_OK){
+			if(uart_buffer[0] == 0xFF){
+				if(!mount_sd_card(&FatFs)){
+					uart_buffer[0] = 0x00;
 					HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+					NVIC_SystemReset();
 				}
+				break;
+			}else{
+				uart_buffer[0] = 0x03;
+				HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
 			}
 		}
-
-		uart_buffer[0] = 0xF1;
-		HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-
-		/* USER CODE END 2 */
-
-		/* Infinite loop */
-		/* USER CODE BEGIN WHILE */
-		while (1)
-		{
-
-			if(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY) == HAL_OK){
-
-				if(uart_buffer[0] == 0x7F)
-					break;
-
-				if(uart_buffer[0] & 0b10000000){
-					//Good gate
-					char file_name[20];
-					sprintf(file_name, "G_g_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
-
-					if(!create_wave_file(file_name, &fil)){
-						//Send error...
-						uart_buffer[0] = 0x01;
-						HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-						demount_sd_card();
-						NVIC_SystemReset();
-					}
-
-					HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-					start_recording();
-					while(total_bytes_written < RECORDING_TIME_SAMPLES){}
-					stop_recording();
-					HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
-
-					if(!close_wave_file(&fil, &total_bytes_written)){
-						//Send error...
-						uart_buffer[0] = 0x02;
-						HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-						demount_sd_card();
-						NVIC_SystemReset();
-					}
-
-					//Successful recording
-					uart_buffer[0] = 0xF0;
-					HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-
-				}else{
-					//Bad gate
-					char file_name[20];
-					sprintf(file_name, "B_g_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
-
-					if(!create_wave_file(file_name, &fil)){
-						//Send error...
-						uart_buffer[0] = 0x01;
-						HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-						demount_sd_card();
-						NVIC_SystemReset();
-					}
-
-					HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-					start_recording();
-					while(total_bytes_written < RECORDING_TIME_SAMPLES){}
-					stop_recording();
-					HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
-
-					if(!close_wave_file(&fil, &total_bytes_written)){
-						//Send error...
-						uart_buffer[0] = 0x02;
-						HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-						demount_sd_card();
-						NVIC_SystemReset();
-					}
-
-					//Successful recording
-					uart_buffer[0] = 0xF0;
-					HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-				}
-			}
-
-			/* USER CODE END WHILE */
-
-			/* USER CODE BEGIN 3 */
-		}
-
-		demount_sd_card();
-
-		uart_buffer[0] = 0xF2;
-		HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-
 	}
+
+	uart_buffer[0] = 0xF1;
+	HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+
+	/* USER CODE END 2 */
+
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
+	while (1)
+	{
+
+		if(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY) == HAL_OK){
+
+			if(uart_buffer[0] == 0x7F)
+				break;
+
+			if(uart_buffer[0] & 0b10000000){
+				//Good gate
+				char file_name[20];
+				sprintf(file_name, "G_g_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
+
+				if(!create_wave_file(file_name, &fil)){
+					//Send error...
+					uart_buffer[0] = 0x01;
+					HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+					demount_sd_card();
+					NVIC_SystemReset();
+				}
+
+				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+				start_recording();
+				while(total_bytes_written < RECORDING_TIME_SAMPLES){}
+				stop_recording();
+				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+
+				if(!close_wave_file(&fil, &total_bytes_written)){
+					//Send error...
+					uart_buffer[0] = 0x02;
+					HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+					demount_sd_card();
+					NVIC_SystemReset();
+				}
+
+				//Successful recording
+				uart_buffer[0] = 0xF0;
+				HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+
+			}else{
+				//Bad gate
+				char file_name[20];
+				sprintf(file_name, "B_g_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
+
+				if(!create_wave_file(file_name, &fil)){
+					//Send error...
+					uart_buffer[0] = 0x01;
+					HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+					demount_sd_card();
+					NVIC_SystemReset();
+				}
+
+				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+				start_recording();
+				while(total_bytes_written < RECORDING_TIME_SAMPLES){}
+				stop_recording();
+				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+
+				if(!close_wave_file(&fil, &total_bytes_written)){
+					//Send error...
+					uart_buffer[0] = 0x02;
+					HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+					demount_sd_card();
+					NVIC_SystemReset();
+				}
+
+				//Successful recording
+				uart_buffer[0] = 0xF0;
+				HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+			}
+		}
+
+		/* USER CODE END WHILE */
+
+		/* USER CODE BEGIN 3 */
+	}
+
+	demount_sd_card();
+
+	uart_buffer[0] = 0xF2;
+	HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+
+	NVIC_SystemReset();
+
 	/* USER CODE END 3 */
 }
 
