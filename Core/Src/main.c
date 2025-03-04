@@ -189,17 +189,19 @@ int main(void)
   FATFS FatFs; 	//Fatfs handle
 
   //Wait for mount command
-  while(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY) != HAL_OK){
-	  if(uart_buffer[0] == 0xFF){
-		  if(!mount_sd_card(&FatFs)){
-			  uart_buffer[0] = 0x00;
+  while(1){
+	  if(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY) == HAL_OK){
+		  if(uart_buffer[0] == 0xFF){
+			  if(!mount_sd_card(&FatFs)){
+				  uart_buffer[0] = 0x00;
+				  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
+				  while(1){}
+			  }
+			  break;
+		  }else{
+			  uart_buffer[0] = 0x03;
 			  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-			  while(1){}
 		  }
-		  break;
-	  }else{
-		  uart_buffer[0] = 0x03;
-		  HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
 	  }
   }
 
@@ -218,10 +220,10 @@ int main(void)
 		  if(uart_buffer[0] == 0x7F)
 			  break;
 
-		  if(uart_buffer[0] & 0b1000000){
+		  if(uart_buffer[0] & 0b10000000){
 			  //Good gate
 			  char file_name[20];
-			  sprintf(file_name, "Good_gate_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
+			  sprintf(file_name, "G_g_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
 
 			  if(!create_wave_file(file_name, &fil)){
 				  //Send error...
@@ -251,7 +253,7 @@ int main(void)
 		  }else{
 			  //Bad gate
 			  char file_name[20];
-			  sprintf(file_name, "Bad_gate_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
+			  sprintf(file_name, "B_g_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
 
 			  if(!create_wave_file(file_name, &fil)){
 				  //Send error...
