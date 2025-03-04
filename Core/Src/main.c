@@ -180,7 +180,7 @@ int main(void)
 					if(!mount_sd_card(&FatFs)){
 						uart_buffer[0] = 0x00;
 						HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-						while(1){}
+						NVIC_SystemReset();
 					}
 					break;
 				}else{
@@ -215,7 +215,7 @@ int main(void)
 						uart_buffer[0] = 0x01;
 						HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
 						demount_sd_card();
-						while(1){}
+						NVIC_SystemReset();
 					}
 
 					HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
@@ -230,7 +230,7 @@ int main(void)
 						uart_buffer[0] = 0x02;
 						HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
 						demount_sd_card();
-						while(1){}
+						NVIC_SystemReset();
 					}
 
 					//Successful recording
@@ -246,7 +246,8 @@ int main(void)
 						//Send error...
 						uart_buffer[0] = 0x01;
 						HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-						break;
+						demount_sd_card();
+						NVIC_SystemReset();
 					}
 
 					HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
@@ -260,7 +261,8 @@ int main(void)
 						//Send error...
 						uart_buffer[0] = 0x02;
 						HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-						break;
+						demount_sd_card();
+						NVIC_SystemReset();
 					}
 
 					//Successful recording
@@ -275,6 +277,7 @@ int main(void)
 		}
 
 		demount_sd_card();
+
 		uart_buffer[0] = 0xF2;
 		HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
 
