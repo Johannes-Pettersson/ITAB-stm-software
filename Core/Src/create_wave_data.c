@@ -19,7 +19,7 @@ int create_wave_file(const char* name, FIL* fil)
 {
 	FRESULT fres;
 
-	fres = f_open(fil, name, FA_WRITE | FA_CREATE_NEW);
+	fres = f_open(fil, name, FA_WRITE | FA_CREATE_ALWAYS);
 	if (fres != FR_OK) {
 		return 0;
 	}
