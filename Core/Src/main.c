@@ -63,6 +63,10 @@ FIL fil; 		//Currently open file handle
 unsigned int bytes_written;
 unsigned int total_bytes_written = 0;
 
+uint16_t g_rec_num = 1;
+uint16_t f_rec_num = 1;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -207,7 +211,7 @@ int main(void)
 			if(uart_buffer[0] & 0b10000000){
 				//Good gate
 				char file_name[20];
-				sprintf(file_name, "G_g_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
+				sprintf(file_name, "G_g_%d.wav", g_rec_num++);
 
 				if(!create_wave_file(file_name, &fil)){
 					//Send error...
@@ -239,7 +243,7 @@ int main(void)
 			}else{
 				//Bad gate
 				char file_name[20];
-				sprintf(file_name, "B_g_%d.wav", (uart_buffer[0] & 0b01111111) + 1);
+				sprintf(file_name, "B_g_%d.wav", f_rec_num++);
 
 				if(!create_wave_file(file_name, &fil)){
 					//Send error...
