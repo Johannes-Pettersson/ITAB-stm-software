@@ -67,14 +67,14 @@ void Error_Handler(void);
 #define USART_RX_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
-#define SD_SCK_Pin GPIO_PIN_0
+#define SD_SCK_Pin GPIO_PIN_10
 #define SD_SCK_GPIO_Port GPIOB
-#define SD_MOSI_Pin GPIO_PIN_10
-#define SD_MOSI_GPIO_Port GPIOA
+#define SD_MISO_Pin GPIO_PIN_14
+#define SD_MISO_GPIO_Port GPIOB
+#define SD_MOSI_Pin GPIO_PIN_15
+#define SD_MOSI_GPIO_Port GPIOB
 #define SD_CS_Pin GPIO_PIN_11
 #define SD_CS_GPIO_Port GPIOA
-#define SD_MISO_Pin GPIO_PIN_12
-#define SD_MISO_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
@@ -83,7 +83,7 @@ void Error_Handler(void);
 #define SWO_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-#define SD_SPI_HANDLE hspi5
+#define SD_SPI_HANDLE hspi2
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
