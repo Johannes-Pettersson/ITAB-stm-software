@@ -5,13 +5,41 @@
 #include <stdio.h>
 #include "fatfs.h"
 
+int initiate_file_write_to_pi(SPI_HandleTypeDef *hspi){
+	// File create message: 0x01
+	uint8_t* send_buf = 0x01;
+	uint8_t* receive_buf[1];
+	HAL_SPI_TransmitReceive(hspi, send_buf, receive_buf,  1, HAL_MAX_DELAY);
+	if (receive_buf[0] == 0x00){
+		return 1;
+	}
+	return 0;
+}
 
+void write_data_to_pi(
+		SPI_HandleTypeDef *hspi,
+		const void* buff,	/* Pointer to the data to be written */
+		UINT btw,			/* Number of bytes to write */
+		UINT* bw			/* Pointer to number of bytes written */
+		)
+{
+	&bw = 0;
+	if (HAL_SPI_Transmit(hspi, buff, btw, HAL_MAX_DELAY) == HAL_OK){
+		bw += btw;
+	}
+}
+
+int write_file_length_to_pi(unsigned int* number_of_bytes_written){
+	// File length message header: 0x13,0x37,0x69,0x42
+
+	return 1;
+}
 
 int mount_sd_card(FATFS* FatFs){
-	//Open the file system
-	if (f_mount(FatFs, "", 1) != FR_OK) { //1=mount now
-		return 0;
-	}
+//	//Open the file system
+//	if (f_mount(FatFs, "", 1) != FR_OK) { //1=mount now
+//		return 0;
+//	}
 	return 1;
 }
 
@@ -19,8 +47,9 @@ int create_wave_file(const char* name, FIL* fil)
 {
 	FRESULT fres;
 
-	fres = f_open(fil, name, FA_WRITE | FA_CREATE_NEW);
-	if (fres != FR_OK) {
+
+	fres = initiate_file_write_to_pi();
+	if (fres != 1) {
 		return 0;
 	}
 
@@ -62,35 +91,39 @@ int create_wave_file(const char* name, FIL* fil)
 
 
 	unsigned int res;
-    f_write(fil, &wavh, header_length, &res);
+    write_data_to_pi(&wavh, header_length, &res);
 
 	return 1;
 }
 
 int close_wave_file(FIL* fil, unsigned int* number_of_data_bytes_written){
-	//Insert data into header of file
-	f_lseek(fil, 4);
+//	//Insert data into header of file
+//	f_lseek(fil, 4);
+//
+//	unsigned int res;
+//
+//	unsigned int file_length = (*number_of_data_bytes_written) + 44;
+//	f_write(fil, &file_length, 4, &res);
+//
+//	f_lseek(fil, 40);
+//
+//	f_write(fil, number_of_data_bytes_written, 4, &res);
+//
+//	//Close file
+//	if(f_close(fil) != FR_OK){
+//		return 0;
+//	}
+//	return 1;
 
-	unsigned int res;
-
-	unsigned int file_length = (*number_of_data_bytes_written) + 44;
-	f_write(fil, &file_length, 4, &res);
-
-	f_lseek(fil, 40);
-
-	f_write(fil, number_of_data_bytes_written, 4, &res);
-
-	//Close file
-	if(f_close(fil) != FR_OK){
-		return 0;
-	}
-	return 1;
+	return write_file_length_to_pi(number_of_data_bytes_written);
 }
 
 
 void demount_sd_card() {
-	f_mount(NULL, "", 0);
+//	f_mount(NULL, "", 0);
 }
+
+
 
 
 

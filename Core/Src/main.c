@@ -105,7 +105,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc){
 
 	adjust_to_offset(adc_buffer, ADC_BUFFER_SIZE/2);
 
-	if(f_write(&fil, adc_buffer, ADC_BUFFER_SIZE/2 * sizeof(uint16_t), &bytes_written) == FR_OK){
+	if(write_data_to_pi(adc_buffer, ADC_BUFFER_SIZE/2 * sizeof(uint16_t), &bytes_written) == 1){
 		total_bytes_written += bytes_written;
 		bytes_written = 0;
 	}else{
@@ -118,7 +118,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 
 	adjust_to_offset(adc_buffer+ADC_BUFFER_SIZE/2, ADC_BUFFER_SIZE/2);
 
-	if(f_write(&fil, adc_buffer+(ADC_BUFFER_SIZE/2), ADC_BUFFER_SIZE/2 * sizeof(uint16_t), &bytes_written) == FR_OK){
+	if(write_data_to_pi(adc_buffer+(ADC_BUFFER_SIZE/2), ADC_BUFFER_SIZE/2 * sizeof(uint16_t), &bytes_written) == 1){
 		total_bytes_written += bytes_written;
 		bytes_written = 0;
 	}else{
@@ -159,7 +159,6 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
-  MX_FATFS_Init();
   MX_TIM2_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
@@ -176,11 +175,6 @@ int main(void)
 	while(1){
 		if(HAL_UART_Receive(&huart2, uart_buffer, 1, HAL_MAX_DELAY) == HAL_OK){
 			if(uart_buffer[0] == 0xFF){
-				if(!mount_sd_card(&FatFs)){
-					uart_buffer[0] = 0x00;
-					HAL_UART_Transmit(&huart2, uart_buffer, 1, 1000);
-					NVIC_SystemReset();
-				}
 				break;
 			}else{
 				uart_buffer[0] = 0x03;
